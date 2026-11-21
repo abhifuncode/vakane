@@ -171,7 +171,33 @@ def crumbs(*parts):
     return '<nav class="crumbs" aria-label="Breadcrumb">%s</nav>' % "".join(out)
 
 
-def page_hero(crumb, eyebrow, h1, lead, side=""):
+def img(name, alt="", cls="", sizes="(max-width: 960px) 100vw, 50vw", eager=False):
+    return ('<img class="%s" src="assets/img/%s-sm.webp" srcset="assets/img/%s-sm.webp 820w, assets/img/%s.webp 1600w" sizes="%s" alt="%s" loading="%s" decoding="async">'
+            % (cls, name, name, name, sizes, e(alt), "eager" if eager else "lazy"))
+
+
+def gear_svg(cls="gear-spin", teeth=12):
+    import math
+    pts = []
+    R, r = 100, 84
+    for i in range(teeth):
+        a0 = 2 * math.pi * i / teeth
+        step = 2 * math.pi / teeth
+        for frac, rad in ((0.0, r), (0.18, r), (0.26, R), (0.5, R), (0.58, r)):
+            a = a0 + step * frac
+            pts.append("%.1f,%.1f" % (110 + rad * math.cos(a), 110 + rad * math.sin(a)))
+    return ('<svg class="%s" viewBox="0 0 220 220" aria-hidden="true"><polygon points="%s" fill="none" stroke="currentColor" stroke-width="1.2"/>'
+            '<circle cx="110" cy="110" r="52" fill="none" stroke="currentColor" stroke-width="1.2"/>'
+            '<circle cx="110" cy="110" r="14" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>' % (cls, " ".join(pts)))
+
+
+def page_hero(crumb, eyebrow, h1, lead, side="", image=None):
+    if image:
+        inner = ('<div class="page-hero-grid"><div><span class="eyebrow">%s</span><h1 class="hero-title">%s</h1><p class="lead">%s</p></div>%s</div>'
+                 % (e(eyebrow), h1, lead, side)) if side else (
+                 '<span class="eyebrow">%s</span><h1 class="hero-title">%s</h1><p class="lead">%s</p>' % (e(eyebrow), h1, lead))
+        return ('<section class="page-hero hero-img"><div class="ph-bg" data-parallax="0.18">%s</div><div class="ph-shade"></div>%s'
+                '<div class="container">%s%s</div></section>' % (img(image, "", "kb", "100vw", True), gear_svg("gear-spin ph-gear"), crumb, inner))
     if side:
         return ('<section class="page-hero"><div class="container">%s<div class="page-hero-grid"><div>'
                 '<span class="eyebrow">%s</span><h1>%s</h1><p class="lead">%s</p></div>%s</div></div></section>'
@@ -188,9 +214,11 @@ def faq_block(items):
 
 def cta_band(title="Ready when you are.", text="Tell us what you make and where you want to sell it. You'll have a clear plan, timeline and fixed quote within one business day."):
     return """<div class="cta-band"><div class="container"><div class="cta-inner reveal">
+  <div class="cta-bg" data-parallax="0.12">{img}</div>
   <div><h2>{t}</h2><p>{x}</p></div>
-  <div class="cta-actions"><a class="btn btn-light" href="contact.html">Get a free quote {a}</a><a class="btn btn-ghost" href="tel:{tel}">Call {phone}</a></div>
-</div></div></div>""".format(t=title, x=e(text), a=ARROW, tel=BRAND["phone"].replace(" ", ""), phone=BRAND["phone"])
+  <div class="cta-actions"><a class="btn btn-accent2" href="contact.html">Get a free quote {a}</a><a class="btn btn-ghost" href="tel:{tel}">Call {phone}</a></div>
+</div></div></div>""".format(t=title, x=e(text), a=ARROW, tel=BRAND["phone"].replace(" ", ""), phone=BRAND["phone"],
+                             img=img("cta-welding", "", "", "100vw"))
 
 
 def enquiry_form(compact=False, preset=""):
@@ -247,8 +275,47 @@ WHY = [
     ("Real-time updates", "Weekly status reports and a direct line to your specialist — on WhatsApp, email or phone."),
     ("Long-term care", "Renewal reminders, model additions and regulatory alerts long after the certificate arrives."),
 ]
-INDUSTRIES = ["Electronics & IT", "Electrical & lighting", "Machinery", "Automotive & EV", "Medical devices", "Pharma & AYUSH",
-              "Food & beverage", "Textiles & apparel", "Chemicals", "Construction products", "Toys & consumer goods", "Software & SaaS"]
+INDUSTRIES = [("Electronics & IT", "ind-electronics"), ("Electrical & lighting", "ind-electrical"), ("Machinery", "ind-machinery"),
+              ("Automotive & EV", "ind-automotive"), ("Medical devices", "ind-medical"), ("Pharma & AYUSH", "ind-pharma"),
+              ("Food & beverage", "ind-food"), ("Textiles & apparel", "ind-textiles"), ("Chemicals", "ind-chemicals"),
+              ("Construction & steel", "ind-construction"), ("Consumer goods & export", "ind-consumer"), ("Software & SaaS", "ind-saas")]
+
+CAT_IMG = {
+    "management-system-certification": "cat-msys", "industry-specific-certification": "cat-industry",
+    "product-certification": "cat-product", "customer-compliance-audit": "cat-audit", "business-process-training": "cat-training",
+    "accreditation": "cat-accreditation", "inspection-services": "cat-inspection", "compliance-reports": "cat-report",
+    "information-security": "cat-security",
+}
+ARTICLE_IMG = {"bis-vs-isi-explained": "cat-product", "ce-marking-in-six-steps": "ind-electronics", "preparing-for-iso-stage-2": "cat-msys",
+               "cbam-for-indian-exporters": "ind-construction", "soc2-vs-iso27001": "cat-security", "epr-plastic-packaging": "ind-consumer"}
+KEYWORD_IMG = [
+    (("food", "fssai", "haccp", "fssc", "brcgs", "kosher", "halal", "eat right", "globalg", "organic", "proterra", "fairtrade"), "ind-food"),
+    (("medical", "device", "510", "drug", "cosmetic", "cdsco", "ayush", "icmed", "who", "nabh", "15189", "gmp", "sfda", "health canada"), "ind-medical"),
+    (("textile", "gots", "oeko", "grs", "leather", "slcp", "higg", "scope cert", "sedex", "smeta", "bsci"), "ind-textiles"),
+    (("automotive", "vehicle", "iatf", "e-mark", "ais", "aerospace", "as9100"), "ind-automotive"),
+    (("machinery", "pressure", "atex", "scheme-x", "pellet", "pallet", "esd"), "ind-machinery"),
+    (("chemical", "reach", "kkdik", "rohs"), "ind-chemicals"),
+    (("cable", "electrical", "ul ", "etl", "csa", "vde", "nema", "basec", "kitemark"), "ind-electrical"),
+    (("steel", "weld", "construction", "bre", "cares", "fire", "vds", "fm global", "wras", "dinplus", "cbam", "carbon", "lca"), "ind-construction"),
+    (("telecom", "tec", "wireless", "wpc", "fcc", "electronics", "crs", "kc mark", "ccc", "bis certification", "it security"), "ind-electronics"),
+    (("saso", "saber", "soncap", "kucas", "nom", "eac", "gulf", "emirates", "export", "pvoc", "container", "shipment"), "export-port"),
+]
+
+
+def service_image(s):
+    hay = (" ".join([s["name"], s["full"], s["blurb"]] + s["tags"]) + " ").lower()
+    if s["cat"] in ("product-certification", "industry-specific-certification", "customer-compliance-audit"):
+        for keys, im in KEYWORD_IMG:
+            if any(k in hay for k in keys):
+                return im
+    return CAT_IMG[s["cat"]]
+
+
+def split_words(text, start=0):
+    out = []
+    for i, w in enumerate(text.split(" ")):
+        out.append('<span class="w"><span style="--i:%d">%s</span></span>' % (start + i, w))
+    return " ".join(out)
 
 
 # ---------------------------------------------------------------- pages
@@ -257,94 +324,150 @@ def build_home():
     marks = ["BIS", "ISI Mark", "BIS CRS", "CE Marking", "UKCA", "UL", "FCC", "US FDA", "ISO 9001", "ISO 27001", "ISO 14001", "HACCP",
              "FSSC 22000", "SASO", "EAC", "CCC", "WPC", "EPR", "SOC 2", "NABL", "SMETA", "GOTS"]
     marquee = "".join("<span>%s</span>" % m for m in marks) * 2
-    cats = "".join("""<a class="cat-card reveal" href="{h}"><span class="num">{n}</span><span class="arrow">{a}</span>
-<h3>{t}</h3><p>{s}</p><span class="count">{c} services</span></a>""".format(h=href(c["slug"]), n=c["num"], a=ARROW, t=e(c["name"]),
-                                                                       s=e(c["short"]), c=len(c["items"])) for c in CATEGORIES)
+    cats = "".join("""<a class="scard reveal spot" href="{h}"><div class="scard-img">{im}<span class="scard-num">{n}</span></div>
+<div class="scard-body"><h3>{t}</h3><p>{s}</p><div class="scard-foot"><span class="count">{c} services</span><span class="arrow">{a}</span></div></div></a>""".format(
+        h=href(c["slug"]), n=c["num"], a=ARROW, t=e(c["name"]), s=e(c["short"]), c=len(c["items"]),
+        im=img(CAT_IMG[c["slug"]], c["name"], "", "(max-width: 640px) 100vw, (max-width: 960px) 50vw, 33vw")) for c in CATEGORIES)
     popular = ["bis-certification", "isi-mark", "bis-crs", "ce-marking", "iso-9001", "iso-27001", "ul-certification", "fda-food-registration",
                "wpc-eta", "epr-registration", "saso-saber", "haccp", "soc-2", "nabl-accreditation", "smeta-audit", "carbon-footprint"]
-    chips = "".join('<a class="chip" href="%s">%s %s</a>' % (href(s), e(SVC[s]["name"]), ARROW) for s in popular)
+    chips = "".join('<a class="chip reveal" href="%s">%s %s</a>' % (href(s), e(SVC[s]["name"]), ARROW) for s in popular)
     why = "".join('<div class="feature reveal"><div class="ic">%s</div><div><h3>%s</h3><p>%s</p></div></div>' % (ICONS[i % 6], t, x)
                   for i, (t, x) in enumerate(WHY))
-    inds = "".join('<div class="ind reveal">%s<span>%02d</span></div>' % (e(n), i + 1) for i, n in enumerate(INDUSTRIES))
+    inds = "".join('<a class="itile reveal" href="services.html">%s<span class="itile-n">%02d</span><span class="itile-t">%s</span></a>'
+                   % (img(im, n, "", "(max-width: 640px) 50vw, 25vw"), i + 1, e(n)) for i, (n, im) in enumerate(INDUSTRIES))
     posts = "".join(post_card(a) for a in ARTICLES[:3])
+    countries = "".join('<a class="chip chip-glass" href="%s">%s</a>' % (href("country-" + c[0]), e(c[1])) for c in COUNTRIES[:10])
+    steps = "".join('<div class="step reveal"><div class="k">%s</div><h3>%s</h3><p>%s</p></div>' % x for x in HOW)
     content = """
-<section class="hero"><div class="container hero-grid">
-  <div>
-    <span class="eyebrow">Certification &amp; compliance partner</span>
-    <h1>Certification, <em>without</em> the guesswork.</h1>
-    <p class="lead">BIS, ISO, CE, FDA and {n}+ other approvals — scoped, managed and delivered by one specialist team, so you can get to market and stay there.</p>
-    <div class="hero-actions">
-      <a class="btn btn-primary" href="contact.html">Get a free assessment {a}</a>
-      <a class="btn btn-ghost" href="services.html">Explore services</a>
+<section class="hero hero-home">
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow fade-in" style="--i:0">Certification &amp; compliance partner</span>
+      <h1 class="split-words">{h1a} <em>{h1b}</em> {h1c}</h1>
+      <p class="lead fade-in" style="--i:6">BIS, ISO, CE, FDA and {n}+ other approvals — scoped, managed and delivered by one specialist engineering team, so you can get to market and stay there.</p>
+      <div class="hero-actions fade-in" style="--i:7">
+        <a class="btn btn-primary magnetic" href="contact.html">Get a free assessment {a}</a>
+        <a class="btn btn-ghost" href="services.html">Explore services</a>
+      </div>
+      <div class="hero-trust fade-in" style="--i:8">
+        <div><strong data-count="{n}" data-suffix="+">0</strong>certification schemes</div>
+        <div><strong data-count="{cc}">0</strong>country guides</div>
+        <div><strong data-count="24" data-suffix="h">0</strong>response to every enquiry</div>
+      </div>
     </div>
-    <div class="hero-trust">
-      <div><strong>{n}+</strong>certification schemes</div>
-      <div><strong>{cc}</strong>country guides</div>
-      <div><strong>24h</strong>response to every enquiry</div>
+    <div class="collage" data-tilt>
+      {gear}
+      <div class="c-main reveal-img">{im_main}</div>
+      <div class="c-sub reveal-img" style="--d:.35s">{im_sub}</div>
+      <div class="c-tag reveal-img" style="--d:.55s">{im_tag}</div>
+      <div class="badge b1" data-depth="18">
+        <span class="b-ic">{check}</span><div><b>Documents verified</b><small>Technical file · 42 items</small></div>
+      </div>
+      <div class="badge b2" data-depth="-14">
+        <div class="b-row"><b>Lab testing</b><small>In progress</small></div>
+        <div class="bar"><span></span></div>
+      </div>
+      <div class="badge b3" data-depth="10">
+        <span class="b-ic amber">{check}</span><div><b>Certificate issued</b><small>Ready to ship</small></div>
+      </div>
+      <div class="sparks" aria-hidden="true">{sparks}</div>
     </div>
   </div>
-  <div class="card quote-card reveal">
-    <h3>Start with a free assessment</h3>
-    <p>Tell us about your product. We'll reply with the approvals you need, timeline and a fixed quote.</p>
-    {form}
-  </div>
-</div></section>
+</section>
 
 <div class="marquee" aria-hidden="true"><div class="marquee-track">{marquee}</div></div>
 
 <section><div class="container">
-  <div class="section-head"><div><span class="eyebrow">What we do</span><h2>Nine practices. One point of contact.</h2></div>
-  <p>From a single product mark to a full management system, every engagement is run by specialists who do nothing else.</p></div>
-  <div class="cat-grid">{cats}</div>
+  <div class="section-head"><div><span class="eyebrow">What we do</span><h2 class="split-on-view">Nine practices. One point of contact.</h2></div>
+  <p class="reveal">From a single product mark to a full management system, every engagement is run by specialists who do nothing else.</p></div>
+  <div class="scard-grid" data-stagger>{cats}</div>
 </div></section>
 
 <section class="section-sm bg-surface"><div class="container split">
   <div><span class="eyebrow">Most requested</span><h2 class="h2" style="margin-top:14px">Popular certifications</h2>
   <p class="muted" style="margin-top:16px">Jump straight to the guide you need — or browse the full catalogue of {n}+ services.</p>
   <a class="link-arrow" href="services.html">View all services {a}</a></div>
-  <div class="chips">{chips}</div>
+  <div class="chips" data-stagger>{chips}</div>
 </div></section>
 
-<section class="bg-ink"><div class="container">
+<section class="bg-ink how">
+  <div class="how-bg" data-parallax="0.15">{im_how}</div>
+  <div class="container" style="position:relative">
   <div class="section-head"><div><span class="eyebrow">How it works</span><h2>From question to certificate in four steps.</h2></div>
   <p>A simple, predictable process — whichever certification you need.</p></div>
-  {steps}
+  <div class="steps-wrap"><div class="steps-line"><span></span></div><div class="steps" data-stagger>{steps}</div></div>
 </div></section>
 
-<section><div class="container split">
-  <div class="sticky"><span class="eyebrow">Why {brand}</span><h2 class="h2" style="margin-top:14px">A calmer way to get certified.</h2>
-  <p class="lead" style="margin-top:20px">Certification is rarely hard because of the standard. It's hard because of unclear requirements, slow labs and silent regulators. We remove that friction.</p>
-  <a class="btn btn-ghost" href="about.html" style="margin-top:12px">About us {a}</a></div>
-  <div class="features">{why}</div>
+<section><div class="container split why">
+  <div class="sticky">
+    <span class="eyebrow">Why {brand}</span><h2 class="h2" style="margin-top:14px">A calmer way to get certified.</h2>
+    <p class="lead" style="margin-top:20px">Certification is rarely hard because of the standard. It's hard because of unclear requirements, slow labs and silent regulators. We remove that friction.</p>
+    <div class="why-media reveal-img"><div class="why-img" data-parallax="-0.08">{im_why}</div>
+      <div class="why-card"><strong data-count="1">0</strong><span>named specialist from first call to final certificate</span></div></div>
+  </div>
+  <div class="features" data-stagger>{why}</div>
 </div></section>
 
 <section class="section-sm bg-warm"><div class="container">
   <div class="section-head"><div><span class="eyebrow">Industries</span><h2>Built for regulated products.</h2></div>
-  <p>Deep, hands-on experience across the sectors where compliance decides who gets to sell.</p></div>
-  <div class="ind-grid">{inds}</div>
+  <p class="reveal">Deep, hands-on experience across the sectors where compliance decides who gets to sell.</p></div>
+  <div class="itile-grid" data-stagger>{inds}</div>
 </div></section>
+
+<section class="band">
+  <div class="band-bg" data-parallax="0.22">{im_port}</div>
+  <div class="container band-inner">
+    <span class="eyebrow">Export compliance</span>
+    <h2 class="split-on-view">Shipping abroad? We know the paperwork at the other end.</h2>
+    <p class="reveal">Country-by-country guidance for {cc} markets — from CE and UL to SASO, SONCAP and EAC.</p>
+    <div class="chips reveal">{countries}</div>
+    <a class="btn btn-light reveal" href="countries.html">All country guides {a}</a>
+  </div>
+</section>
 
 <section><div class="container">
   <div class="section-head"><div><span class="eyebrow">Insights</span><h2>Plain-English guides.</h2></div>
   <a class="link-arrow" href="insights.html">All articles {a}</a></div>
-  <div class="post-grid">{posts}</div>
+  <div class="post-grid" data-stagger>{posts}</div>
 </div></section>
 
-<section style="padding-top:0"><div class="container split">
+<section class="bg-warm quote-sec"><div class="container split">
+  <div>
+    <span class="eyebrow">Free assessment</span><h2 class="h2" style="margin-top:14px">Tell us what you make. We'll map every approval.</h2>
+    <p class="lead" style="margin-top:20px">Within one business day you'll have the approvals you need, a realistic timeline and a fixed, itemised quote.</p>
+    <ul class="checklist" style="margin-top:28px">
+      <li>{check}<span>No obligation, no cost for the assessment</span></li>
+      <li>{check}<span>Professional, lab and government fees itemised</span></li>
+      <li>{check}<span>One named specialist for your whole project</span></li>
+    </ul>
+  </div>
+  <div class="card quote-card reveal">{form}</div>
+</div></section>
+
+<section><div class="container split">
   <div><span class="eyebrow">FAQ</span><h2 class="h2" style="margin-top:14px">Questions we hear every day.</h2>
   <p class="muted" style="margin-top:16px">Can't find your answer? <a href="contact.html" style="text-decoration:underline">Ask us directly</a>.</p></div>
   {faq}
 </div></section>
 {cta}
-""".format(n=n_services, cc=len(COUNTRIES), a=ARROW, form=enquiry_form(compact=True), marquee=marquee, cats=cats, chips=chips,
-           steps=steps_block(HOW), brand=BRAND["name"], why=why, inds=inds, posts=posts, faq=faq_block(FAQ_HOME), cta=cta_band())
+""".format(n=n_services, cc=len(COUNTRIES), a=ARROW, check=CHECK, form=enquiry_form(compact=True), marquee=marquee, cats=cats, chips=chips,
+           steps=steps, brand=BRAND["name"], why=why, inds=inds, posts=posts, faq=faq_block(FAQ_HOME), cta=cta_band(), countries=countries,
+           h1a=split_words("Certification,", 1), h1b=split_words("without", 2), h1c=split_words("the guesswork.", 3),
+           gear=gear_svg("gear-spin hero-gear"), sparks="".join('<i style="--a:%ddeg;--t:%.2fs"></i>' % (200 + k * 14, 0.9 + (k % 4) * 0.35) for k in range(10)),
+           im_main=img("hero-laser", "Laser cutting machine cutting sheet metal with sparks", "kb", "(max-width: 960px) 100vw, 40vw", True),
+           im_sub=img("hero-lab", "Scientist testing samples in a laboratory", "", "(max-width: 960px) 50vw, 20vw", True),
+           im_tag=img("hero-inspect", "Engineer inspecting equipment in a factory", "", "(max-width: 960px) 40vw, 15vw", True),
+           im_how=img("about-engineers", "", "", "100vw"), im_why=img("about-cnc", "CNC machining workshop", "", "(max-width: 960px) 100vw, 45vw"),
+           im_port=img("export-port", "", "", "100vw"))
     page("index", "Home", "Independent certification and compliance consultants for BIS, ISI, ISO, CE, UL, FDA and %d+ approvals in India and worldwide." % n_services, content)
 
 
 def post_card(a):
-    return ('<a class="post reveal" href="%s"><div class="meta"><span class="tag">%s</span><span>%s</span><span>·</span><span>%s read</span></div>'
-            '<h3>%s</h3><p>%s</p><span class="link-arrow">Read article %s</span></a>'
-            % (href(a["slug"]), e(a["tag"]), e(a["date"]), e(a["read"]), e(a["title"]), e(a["excerpt"]), ARROW))
+    return ('<a class="post reveal spot" href="%s"><div class="post-img">%s</div><div class="post-body"><div class="meta"><span class="tag">%s</span><span>%s</span><span>·</span><span>%s read</span></div>'
+            '<h3>%s</h3><p>%s</p><span class="link-arrow">Read article %s</span></div></a>'
+            % (href(a["slug"]), img(ARTICLE_IMG.get(a["slug"], "cat-msys"), a["title"], "", "(max-width: 640px) 100vw, 33vw"),
+               e(a["tag"]), e(a["date"]), e(a["read"]), e(a["title"]), e(a["excerpt"]), ARROW))
 
 
 def build_services_index():
@@ -356,7 +479,7 @@ def build_services_index():
                    '<a class="link-arrow" href="%s">Overview %s</a></div><div class="cat-links">%s</div></div>'
                    % (c["num"], e(c["name"]), e(c["short"]), href(c["slug"]), ARROW, links))
     content = page_hero(crumbs((None, "Services")), "Services", "Everything you need to sell with confidence.",
-                        "%d services across nine practices — covering product marks, management systems, audits, accreditation, inspection, ESG and cyber security." % len(SERVICES))
+                        "%d services across nine practices — covering product marks, management systems, audits, accreditation, inspection, ESG and cyber security." % len(SERVICES), image="hero-laser")
     content += '<section style="padding-top:24px"><div class="container">%s</div></section>' % blocks
     content += cta_band("Not sure where to start?", "Most clients come to us with a product and a deadline. We'll work out the rest together.")
     page("services", "Services", "All certification, compliance, audit, inspection and training services.", content)
@@ -380,7 +503,7 @@ def build_category(c):
     steps = [(str(i + 1).zfill(2), t, x) for i, (_, t, x) in enumerate(k["steps"][:4])] if c["kind"] != "product" else HOW
     side = ('<div class="card facts"><dl><div><dt>Services</dt><dd>%d</dd></div><div><dt>Response</dt><dd>Within one business day</dd></div>'
             '<div><dt>Pricing</dt><dd>Fixed, itemised quote</dd></div><div><dt>Support</dt><dd>One named specialist</dd></div></dl></div>' % len(items))
-    content = page_hero(crumbs(("services", "Services"), (None, c["name"])), "Practice " + c["num"], e(c["name"]), e(c["intro"]), side)
+    content = page_hero(crumbs(("services", "Services"), (None, c["name"])), "Practice " + c["num"], e(c["name"]), e(c["intro"]), side, image=CAT_IMG[c["slug"]])
     content += """<section><div class="container">
   <div class="section-head"><div><span class="eyebrow">Catalogue</span><h2>{h}</h2></div><p>Choose a service to see requirements, documents, process and timelines.</p></div>
   {tb}<div class="svc-grid" data-filter-list>{cards}</div><div class="empty">No matches. Try a different search, or <a href="contact.html" style="text-decoration:underline">ask us</a> — we likely cover it.</div>
@@ -406,10 +529,11 @@ def build_service(s):
         facts.append(("Validity", s["validity"]))
     facts.append(("Who it's for", s["who"]))
     side = '<div class="card facts"><dl>%s</dl></div>' % "".join('<div><dt>%s</dt><dd>%s</dd></div>' % (e(a), e(b)) for a, b in facts)
-    hero = page_hero(crumbs(("services", "Services"), (c["slug"], c["name"]), (None, name)), s["full"], e(name), e(s["blurb"]), side)
+    hero = page_hero(crumbs(("services", "Services"), (c["slug"], c["name"]), (None, name)), s["full"], e(name), e(s["blurb"]), side, image=service_image(s))
 
     overview = """<section><div class="container split">
-  <div class="sticky"><span class="eyebrow">Overview</span><h2 class="h2" style="margin-top:14px">What is {n}?</h2></div>
+  <div class="sticky"><span class="eyebrow">Overview</span><h2 class="h2" style="margin-top:14px">What is {n}?</h2>
+    <div class="side-img reveal-img">{im}</div></div>
   <div class="prose">
     <p>{blurb}</p>
     <p><strong>Who needs it:</strong> {who}</p>
@@ -417,7 +541,8 @@ def build_service(s):
     <p>From there, a dedicated specialist manages the entire process — documentation, testing, applications, audits and every question from the issuing body — and keeps you updated weekly until the certificate is in your hands.</p>
     <div class="hero-actions" style="margin-top:28px"><a class="btn btn-primary" href="contact.html">Get a quote for {n} {a}</a></div>
   </div>
-</div></section>""".format(n=e(name), blurb=e(s["blurb"]), who=e(s["who"]), brand=BRAND["name"], a=ARROW)
+</div></section>""".format(n=e(name), blurb=e(s["blurb"]), who=e(s["who"]), brand=BRAND["name"], a=ARROW,
+                                    im=img(service_image(s), name, "", "(max-width: 960px) 100vw, 40vw"))
 
     benefits = "".join('<div class="feature reveal"><div class="ic">%s</div><div><h3>%s</h3><p>%s</p></div></div>' % (ICONS[i % 6], e(t), e(x))
                        for i, (t, x) in enumerate(k["benefits"]))
@@ -469,7 +594,7 @@ def build_countries():
                     % (href("country-" + slug), code, e(nm), "%d related services" % len(rel) if rel else "Guidance available")
                     for slug, nm, code, _, rel in COUNTRIES)
     content = page_hero(crumbs(("services", "Services"), (None, "Country guides")), "Country guides", "Selling abroad? Start here.",
-                        "Each export market has its own regulators, marks and paperwork. Pick a country to see what typically applies — then let us confirm it for your product.")
+                        "Each export market has its own regulators, marks and paperwork. Pick a country to see what typically applies — then let us confirm it for your product.", image="export-port")
     content += '<section><div class="container"><div class="country-grid">%s</div></div></section>' % cards + cta_band(
         "Exporting to a market not listed?", "We support approvals in more than 50 countries. Tell us where you are headed.")
     page("countries", "Country guides", "Certification requirements by export market.", content, active="countries")
@@ -483,14 +608,14 @@ def build_countries():
                 '<a class="btn btn-primary" href="contact.html">Ask about %s %s</a></div></section>' % (e(nm), e(nm), ARROW))
         side = ('<div class="card facts"><dl><div><dt>Market</dt><dd>%s</dd></div><div><dt>Code</dt><dd>%s</dd></div>'
                 '<div><dt>Services</dt><dd>%d listed</dd></div></dl></div>' % (e(nm), code, len(rel)))
-        content = page_hero(crumbs(("countries", "Country guides"), (None, nm)), "Country guide", "Certification for %s" % e(nm), e(text), side) + body + cta_band(
+        content = page_hero(crumbs(("countries", "Country guides"), (None, nm)), "Country guide", "Certification for %s" % e(nm), e(text), side, image="export-port") + body + cta_band(
             "Shipping to %s soon?" % e(nm))
         page("country-" + slug, "Certification for %s" % nm, text, content, active="countries")
 
 
 def build_insights():
     content = page_hero(crumbs((None, "Insights")), "Insights", "Notes from the certification desk.",
-                        "Practical, jargon-free guides on product approvals, ISO standards, ESG and security — written by the people who do the work.")
+                        "Practical, jargon-free guides on product approvals, ISO standards, ESG and security — written by the people who do the work.", image="cat-training")
     content += '<section><div class="container"><div class="post-grid">%s</div></div></section>' % "".join(post_card(a) for a in ARTICLES)
     content += cta_band("Have a question we haven't covered?")
     page("insights", "Insights", "Guides and updates on certification and compliance.", content, active="insights")
@@ -499,8 +624,8 @@ def build_insights():
         for t, x in a["body"]:
             body += "<%s>%s</%s>" % (t, e(x), t)
         others = [o for o in ARTICLES if o["slug"] != a["slug"]][:3]
-        content = ('<section class="page-hero article-hero"><div class="container">%s<span class="eyebrow">%s · %s · %s read</span><h1>%s</h1><p class="lead">%s</p></div></section>'
-                   % (crumbs(("insights", "Insights"), (None, a["tag"])), e(a["tag"]), e(a["date"]), e(a["read"]), e(a["title"]), e(a["excerpt"])))
+        content = page_hero(crumbs(("insights", "Insights"), (None, a["tag"])), "%s · %s · %s read" % (a["tag"], a["date"], a["read"]),
+                            e(a["title"]), e(a["excerpt"]), image=ARTICLE_IMG.get(a["slug"], "cat-msys"))
         content += '<div class="article-body"><div class="container"><article class="prose">%s</article></div></div>' % body
         content += ('<section class="bg-surface"><div class="container"><div class="section-head"><div><span class="eyebrow">Keep reading</span><h2>More insights.</h2></div></div>'
                     '<div class="post-grid">%s</div></div></section><div style="height:112px"></div>' % "".join(post_card(o) for o in others))
@@ -516,7 +641,7 @@ def build_about():
     ]
     v = "".join('<div class="value reveal"><div class="k">%s</div><h3>%s</h3><p>%s</p></div>' % x for x in values)
     content = page_hero(crumbs((None, "About")), "Our story", "We make compliance the easy part of growing.",
-                        "%s is an independent certification and compliance partner. We help manufacturers, importers, exporters and service businesses get the approvals they need — and keep them." % BRAND["name"])
+                        "%s is an independent certification and compliance partner. We help manufacturers, importers, exporters and service businesses get the approvals they need — and keep them." % BRAND["name"], image="about-cnc")
     content += """<section><div class="container split">
   <div class="sticky"><span class="eyebrow">Why we exist</span><h2 class="h2" style="margin-top:14px">Good products shouldn't wait on paperwork.</h2></div>
   <div class="prose">
@@ -551,19 +676,20 @@ def build_about():
 def build_team():
     m = "".join('<div class="member reveal"><div class="ph">Photo</div><h3>Name Surname</h3><div class="role">%s</div><p>%s</p></div>' % (e(r), e(d)) for r, d in TEAM)
     content = page_hero(crumbs(("about", "About"), (None, "Leadership")), "Leadership", "The people behind every certificate.",
-                        "Engineers, auditors and regulatory specialists who have spent their careers on the details that get products approved.")
+                        "Engineers, auditors and regulatory specialists who have spent their careers on the details that get products approved.", image="about-engineers")
     content += '<section><div class="container"><div class="team-grid">%s</div></div></section>' % m
     content += cta_band("Want to work with us?", "We are always looking for experienced auditors, engineers and compliance specialists.")
     page("team", "Leadership", "Meet the leadership team.", content, active="team")
 
 
 def build_clients():
-    inds = "".join('<div class="ind reveal">%s<span>%02d</span></div>' % (e(n), i + 1) for i, n in enumerate(INDUSTRIES))
+    inds = "".join('<a class="itile reveal" href="services.html">%s<span class="itile-n">%02d</span><span class="itile-t">%s</span></a>'
+                   % (img(im, n, "", "(max-width: 640px) 50vw, 25vw"), i + 1, e(n)) for i, (n, im) in enumerate(INDUSTRIES))
     logos = "".join("<div>Client logo</div>" for _ in range(12))
     content = page_hero(crumbs(("about", "About"), (None, "Clients")), "Clients & industries", "Trusted by makers of regulated products.",
-                        "From first-time exporters to listed manufacturers, our clients share one thing: products that must meet a standard before they can be sold.")
+                        "From first-time exporters to listed manufacturers, our clients share one thing: products that must meet a standard before they can be sold.", image="ind-food")
     content += '<section><div class="container"><div class="section-head"><div><span class="eyebrow">Clients</span><h2>Who we work with.</h2></div></div><div class="logo-wall">%s</div></div></section>' % logos
-    content += '<section class="bg-warm"><div class="container"><div class="section-head"><div><span class="eyebrow">Industries</span><h2>Sectors we serve.</h2></div></div><div class="ind-grid">%s</div></div></section><div style="height:112px"></div>' % inds
+    content += '<section class="bg-warm"><div class="container"><div class="section-head"><div><span class="eyebrow">Industries</span><h2>Sectors we serve.</h2></div></div><div class="itile-grid" data-stagger>%s</div></div></section><div style="height:112px"></div>' % inds
     content += cta_band()
     page("clients", "Clients & industries", "Industries and clients we serve.", content, active="clients")
 
@@ -579,7 +705,7 @@ def build_partners():
     ]
     feats = "".join('<div class="feature reveal"><div class="ic">%s</div><div><h3>%s</h3><p>%s</p></div></div>' % (ICONS[i % 6], e(t), e(x)) for i, (t, x) in enumerate(groups))
     content = page_hero(crumbs(("about", "About"), (None, "Partners")), "Certification partners", "The right body, the right lab, first time.",
-                        "Choosing the wrong lab or certification body is the most expensive mistake in certification. Our partner network means you never have to guess.")
+                        "Choosing the wrong lab or certification body is the most expensive mistake in certification. Our partner network means you never have to guess.", image="hero-lab")
     content += '<section><div class="container"><div class="features">%s</div></div></section>' % feats + cta_band()
     page("partners", "Certification partners", "Our network of labs, certification bodies and partners.", content, active="partners")
 
@@ -589,14 +715,14 @@ def build_recognition():
              ("Award", "Awards and industry recognition"), ("Approval", "Approvals and empanelments")]
     v = "".join('<div class="value reveal"><div class="k">%02d</div><h3>%s</h3><p>%s</p></div>' % (i + 1, e(t), e(d)) for i, (t, d) in enumerate(items))
     content = page_hero(crumbs(("about", "About"), (None, "Recognition")), "Recognition", "Credentials that back our work.",
-                        "Our accreditations, memberships and the recognition our team has earned along the way.")
+                        "Our accreditations, memberships and the recognition our team has earned along the way.", image="cat-accreditation")
     content += '<section><div class="container"><div class="values" style="grid-template-columns:repeat(2,1fr)">%s</div></div></section>' % v + cta_band()
     page("recognition", "Recognition", "Accreditations, memberships and awards.", content, active="recognition")
 
 
 def build_offices():
     content = page_hero(crumbs(("about", "About"), (None, "Offices")), "Offices", "Local presence, global reach.",
-                        "Headquartered in Mumbai, with partner offices and representatives in our key export markets.")
+                        "Headquartered in Mumbai, with partner offices and representatives in our key export markets.", image="cat-msys")
     offices = [("Head office", "Mumbai, India", BRAND["address"]), ("Registered office", "Mumbai, India", BRAND["reg_address"]),
                ("Partner office", "Dubai, UAE", "Address to be added"), ("Partner office", "London, UK", "Address to be added")]
     cards = "".join('<div class="value reveal"><span class="eyebrow">%s</span><h3>%s</h3><p>%s</p></div>' % (e(t), e(c), e(a)) for t, c, a in offices)
@@ -606,7 +732,7 @@ def build_offices():
 
 def build_contact():
     content = page_hero(crumbs((None, "Contact")), "Contact", "Let's talk about what you need certified.",
-                        "Send us a few details and a specialist will reply within one business day with the approvals you need, a timeline and a fixed quote.")
+                        "Send us a few details and a specialist will reply within one business day with the approvals you need, a timeline and a fixed quote.", image="hero-inspect")
     content += """<section><div class="container contact-grid">
   <div>
     <dl class="contact-list">
@@ -653,9 +779,7 @@ def build_404_and_sitemap():
 def main():
     if os.path.isdir(OUT):
         shutil.rmtree(OUT)
-    os.makedirs(os.path.join(OUT, "assets"))
-    for f in os.listdir(os.path.join(ROOT, "assets")):
-        shutil.copy(os.path.join(ROOT, "assets", f), os.path.join(OUT, "assets", f))
+    shutil.copytree(os.path.join(ROOT, "assets"), os.path.join(OUT, "assets"))
     build_home()
     build_about(); build_team(); build_clients(); build_partners(); build_recognition(); build_offices()
     build_services_index()
