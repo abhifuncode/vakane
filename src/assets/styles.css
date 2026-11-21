@@ -424,6 +424,8 @@ section { padding: 112px 0; }
 }
 @media (max-width: 960px) {
   .menu-toggle { display: block; }
+  .topbar .tb-left { display: none; }
+  .topbar .container { justify-content: center; }
   .header-cta { display: none; }
   .nav {
     position: fixed; inset: var(--nav-top, 110px) 0 0 0; background: var(--bg); flex-direction: column; align-items: stretch; gap: 0;
