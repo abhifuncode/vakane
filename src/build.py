@@ -793,7 +793,7 @@ def main():
     build_legal()
     build_404_and_sitemap()
     # sitemap.xml for search engines (set your domain)
-    domain = "https://shivpradatt-hub.github.io/vakane/"  # change when you connect your own domain
+    domain = "https://abhifuncode.github.io/vakane/"  # change when you connect your own domain
     with open(os.path.join(OUT, "sitemap.xml"), "w") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
         for s, _ in PAGES:
