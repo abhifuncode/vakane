@@ -1,5 +1,6 @@
 # Vakane Engineering website
 
+
 A minimal, fast, static website for a certification and compliance consultancy. It has 181 pages and no framework.
 
 ## Folders
